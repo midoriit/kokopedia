@@ -19,12 +19,9 @@ var footer_dbpedia = 'DBpedia Japanese by ' +
       'Creative Commons 表示 - 継承 3.0 非移植 License</a><br/><br/>';
 var no_inf = '<br/>この地図の範囲の情報はありません。';
 var origin = [139.741357, 35.658099]; // 日本経緯度原点
-var has_kv = ['',
-    '<has-kv k="tourism" v="museum"/>',
-    '<has-kv k="amenity" v="library"/>',
-    '<has-kv k="amenity" v="place_of_worship"/>',
-    '<has-kv k="historic" v=""/>'
-    ]
+var server = 'http://ja.dbpedia.org/sparql';
+var lang_filter = 'FILTER (LANG(?name)=\'ja\' && LANG(?abstract)=\'ja\')';
+var req;
 
 $(function(){
 
@@ -86,8 +83,9 @@ $(function(){
 
 function showContent() {
 
-  var server = 'http://ja.dbpedia.org/sparql';
-  var lang_filter = 'FILTER (LANG(?name)=\'ja\' && LANG(?abstract)=\'ja\')';
+  if(req) {
+    req.abort();
+  }
   var zoom = view.getZoom();
   var rect = getRect();
   var sparql = 
@@ -109,10 +107,10 @@ function showContent() {
     format: 'application/sparql-results+json'
   };
 
-  vectorSource.clear();
+  req = $.getJSON(server, query, function(data){
 
-  $.getJSON(server, query, function(data){
-
+    req = null;
+    vectorSource.clear();
     var list = data.results.bindings;
 
     bodydiv.innerHTML = '';             // clear
@@ -165,6 +163,8 @@ function showContent() {
 
   })
   .error(function() {
+    req = null;
+    vectorSource.clear();
     bodydiv.innerHTML = dbpedia_err;
   });
 
