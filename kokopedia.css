@@ -1,0 +1,61 @@
+html, body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+#mapdiv {
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+#contentdiv {
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 0;
+  margin: 0;
+}
+@media all and (orientation: portrait) {
+  #mapdiv {
+    height: 65%;
+    width: 100%;
+  }
+  #contentdiv {
+    height: 35%;
+    width: 100%;
+  }
+}
+@media all and (orientation: landscape) {
+  #mapdiv {
+    float: left;
+    height: 100%;
+    width: 65%;
+  }
+  #contentdiv {
+    height: 100%;
+    width: 35%;
+  }
+}
+
+#map {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+#bodydiv {
+  margin: 2px;
+}
+
+a:link {
+  text-decoration: none;
+}
+p {
+  text-indent: 1em;
+}
+.ol-control button {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.ol-control button:hover {
+  background-color: rgba(0, 0, 0, 0.35);
+}
