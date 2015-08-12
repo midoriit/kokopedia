@@ -35,9 +35,8 @@ $(function(){
   map = new ol.Map({
     target: 'map',
     view: view,
-    controls: new ol.control.defaults({rotate:false, attribution:false}).extend([
-      new ol.control.ScaleLine(),
-      new ol.control.Attribution({collapsible:false})
+    controls: new ol.control.defaults({rotate:false, attributionOptions:({collapsible: false})}).extend([
+      new ol.control.ScaleLine()
     ]),
     interactions: ol.interaction.defaults({pinchRotate:false})
   });
