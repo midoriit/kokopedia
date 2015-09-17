@@ -41,16 +41,14 @@ $(function(){
     interactions: ol.interaction.defaults({pinchRotate:false})
   });
   osmLayer = new ol.layer.Tile({
-    source: new ol.source.OSM({
+    source: new ol.source.XYZ({
       attributions: [
         new ol.Attribution({
-          html: 'Tiles Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">'
-        }),
-        new ol.Attribution({
-          html: 'Map data &copy; <a href="http://openstreetmap.org" target="_blank">OpenStreetMap</a> contributors, <a href="http://www.opendatacommons.org/licenses/odbl" target="_blank">ODbL</a>'
+          html: '<a href="http://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html" target="_blank">国土地理院</a>'
         })
       ],
-      url: 'http://otile{1-4}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.jpg'
+      projection: 'EPSG:3857',
+      url: 'http://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
     })
   });
   map.addLayer(osmLayer);
