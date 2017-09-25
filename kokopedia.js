@@ -7,20 +7,14 @@ var view;
 var osmLayer;
 var vectorSource;
 var zoom = 15;
-var maxInf = 15;
+var maxInf = 20;
 var numlist = ['[1]','[2]','[3]','[4]','[5]','[6]','[7]','[8]','[9]','[10]',
-               '[11]','[12]','[13]','[14]','[15]'];
+               '[11]','[12]','[13]','[14]','[15]','[16]','[17]','[18]','[19]','[20]'];
 
-var dbpedia_err = '<br/>DBpediaとの通信に失敗しました。';
-var footer_dbpedia = 'DBpedia Japanese by ' +
-      '<a href="http://ja.dbpedia.org/" target="_blank">DBpedia Community</a> ' +
-      'is licensed under a ' +
-      '<a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">' +
-      'Creative Commons 表示 - 継承 3.0 非移植 License</a><br/><br/>';
+var dbpedia_err = '<br/>Wikidataとの通信に失敗しました。';
 var no_inf = '<br/>この地図の範囲の情報はありません。';
 var origin = [139.741357, 35.658099]; // 日本経緯度原点
-var server = 'http://ja.dbpedia.org/sparql';
-var lang_filter = 'FILTER (LANG(?name)=\'ja\' && LANG(?abstract)=\'ja\')';
+var server = 'https://query.wikidata.org/sparql';
 var req;
 
 $(function(){
@@ -48,7 +42,7 @@ $(function(){
         })
       ],
       projection: 'EPSG:3857',
-      url: 'http://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
+      url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
     })
   });
   map.addLayer(osmLayer);
@@ -89,22 +83,33 @@ function showContent() {
   var zoom = view.getZoom();
   var rect = getRect();
   var sparql = 
-    'SELECT distinct ?name, ?abstract, ?lat, ?lon, ?url, ?link ' + 
-    'WHERE { ' +
-    '?s rdfs:label ?name ; ' +
-    'dbpedia-owl:abstract ?abstract ; ' +
-    'foaf:isPrimaryTopicOf ?url ; ' +
-    'geo:lat ?lat ; ' +
-    'geo:long ?lon . ' +
-    'OPTIONAL { ?s foaf:homepage ?link } ' +
-    'FILTER ( ?lon > "' + rect[0] + '"^^xsd:float && ?lon < "' + rect[2] + '"^^xsd:float && ' +
-    '?lat > "' + rect[1] + '"^^xsd:float && ?lat < "' + rect[3] + '"^^xsd:float ) ' +
-    lang_filter +
+    'SELECT DISTINCT ?sLabel ?lat ?lon ?dsc ?wp WHERE { ' +
+    '  ?wp schema:about ?s . ' +
+    '  ?wp schema:inLanguage "ja" . ' +
+    '  FILTER (SUBSTR(str(?wp), 1, 25) = "https://ja.wikipedia.org/") ' +
+    '  OPTIONAL { ' +
+    '    ?s schema:description ?dsc . ' +
+    '    FILTER (lang(?dsc) = "ja") ' +
+    '  } ' +
+    '  SERVICE wikibase:box { ' +
+    '    ?s wdt:P625 ?location . ' +
+    '    bd:serviceParam wikibase:cornerSouthWest "Point(' +
+           rect[0] + ' ' +  rect[1] +
+    '    )"^^geo:wktLiteral . ' +
+    '    bd:serviceParam wikibase:cornerNorthEast "Point(' +
+           rect[2] + ' ' + rect[3] +
+    '    )"^^geo:wktLiteral . ' +
+    '  } ' +
+    '  BIND(geof:latitude(?location) as ?lat) ' +
+    '  BIND(geof:longitude(?location) as ?lon) ' +
+    '  SERVICE wikibase:label { ' +
+    '    bd:serviceParam wikibase:language "ja, en" . ' +
+    '  } ' +
     '} ' +
     'LIMIT ' + maxInf;
   var query = {
     query : sparql,
-    format: 'application/sparql-results+json'
+    format: 'json'
   };
 
   req = $.getJSON(server, query, function(data){
@@ -116,16 +121,12 @@ function showContent() {
     bodydiv.innerHTML = '';             // clear
     for(i=0 ; i<list.length ; i++) {
       var topic = '<strong>' + numlist[i] + ' ' + 
-        '<a href="' + list[i].url.value + '" target="_blank">' +
-        list[i].name.value + '</a></strong><p></p>';
+        '<a href="' + list[i].wp.value + '" target="_blank">' +
+        list[i].sLabel.value + '</a></strong><p></p>';
       bodydiv.innerHTML += topic;
 
-      bodydiv.innerHTML += '<p>' + list[i].abstract.value + '</p>';
-
-      if(list[i].link) {
-        bodydiv.innerHTML += '<p>' +
-          '<a href="' + list[i].link.value + '" target="_blank">' + 
-        list[i].link.value + '</a></p>';
+      if(list[i].dsc) {
+        bodydiv.innerHTML += '<p>' + list[i].dsc.value + '</p>';
       }
 
       var iconFeature = new ol.Feature({
@@ -155,17 +156,13 @@ function showContent() {
       vectorSource.addFeature(iconFeature);
 
     }
-    if(list.length > 0) {
-      bodydiv.innerHTML += '<hr/>' + footer_dbpedia;
-    } else {
-      bodydiv.innerHTML = no_inf;
-    }
 
   })
-  .error(function() {
+  .error(function(jqXHR, textStatus, errorThrown) {
     req = null;
     vectorSource.clear();
-    bodydiv.innerHTML = dbpedia_err;
+//    bodydiv.innerHTML = "エラー：" + textStatus + "<br/>テキスト：" + jqXHR.responseText;
+    bodydiv.innerHTML = "";
   });
 
   $('#contentdiv').scrollTop(0);
