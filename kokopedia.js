@@ -47,6 +47,11 @@ $(function(){
   });
   map.addLayer(osmLayer);
   map.on('moveend', function() {
+    center = ol.proj.transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326');
+    history.replaceState(null, null,
+      "?x=" + Math.floor(center[0]*1000000)/1000000 +
+      "&y=" + Math.floor(center[1]*1000000)/1000000 +
+      "&z=" + view.getZoom() );
     showContent();
   });
 
@@ -59,20 +64,47 @@ $(function(){
   view.setCenter(ol.proj.transform(origin, 'EPSG:4326', 'EPSG:3857'));
   view.setZoom(zoom);
 
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      view.setCenter(
-        ol.proj.transform([pos.coords.longitude, pos.coords.latitude],
-          'EPSG:4326', 'EPSG:3857'
-        )
-      );
-      view.setZoom(zoom);
-    },
-    function(err) {
-      // do nothing
-    },
-    {maximumAge: 5000, timeout: 3000, enableHighAccuracy: true}
-  );
+  var pLat=0, pLng=0, pZoom=0;
+  var pstr = location.search.substring(1);
+  if(pstr) {
+    var parr = pstr.split('&');
+    var ppair;
+    for (i = 0; i < parr.length; i++) {
+      ppair = parr[i].split('=');
+      switch (ppair[0]){
+        case 'x':
+          pLng = parseFloat(ppair[1]);
+          break;
+        case 'y':
+          pLat = parseFloat(ppair[1]);
+          break;
+        case 'z':
+          pZoom = parseInt(ppair[1]);
+          break;
+      }
+    }
+  }
+  if(pLat !=0 && pLng != 0 && pZoom != 0) {
+    view.setCenter(
+      ol.proj.transform([pLng, pLat], 'EPSG:4326', 'EPSG:3857')
+    );
+    view.setZoom(pZoom);
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        view.setCenter(
+          ol.proj.transform([pos.coords.longitude, pos.coords.latitude],
+            'EPSG:4326', 'EPSG:3857'
+          )
+        );
+        view.setZoom(zoom);
+      },
+      function(err) {
+        // do nothing
+      },
+      {maximumAge: 5000, timeout: 3000, enableHighAccuracy: true}
+    );
+  }
 });
 
 function showContent() {
